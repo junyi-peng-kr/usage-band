@@ -116,7 +116,7 @@ export const register: Register = on => {
     const surfaces = await $.session.surfaces()
     const snap = await read($, snapshot)
     const hidden = await read($, isHidden)
-    return { result: { text: JSON.stringify({ surfaces, hidden, snapshot: snap }, null, 2) } }
+    return { result: JSON.stringify({ surfaces, hidden, snapshot: snap }, null, 2) }
   })
 
   on('command.run', { command: 'usage-band' }, async ($, e) => {
