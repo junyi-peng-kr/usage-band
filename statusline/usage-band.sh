@@ -10,9 +10,16 @@
 # Install: in ~/.claude/settings.json
 #   "statusLine": { "type": "command", "command": "bash /path/to/usage-band/statusline/usage-band.sh" }
 #
+# Claude Code sets COLUMNS to the terminal width. Sections that would overflow
+# it move to the next line, so a narrow pane shows every figure instead of a
+# truncated line. Without COLUMNS everything stays on one line.
+#
 # Needs jq. Works on macOS and Linux.
 
 input=$(cat)
+
+# Bar cells and arrows are multi-byte; count characters, not bytes.
+case "$(locale charmap 2>/dev/null)" in UTF-8) ;; *) export LC_ALL=C.UTF-8 ;; esac
 
 WARN=70
 BAD=90
@@ -79,7 +86,8 @@ parts=()
 # Path and branch
 cwd=$(j '.workspace.current_dir // .cwd // ""')
 branch=$(git -C "$cwd" --no-optional-locks symbolic-ref --short HEAD 2>/dev/null)
-loc="${DIM}${cwd}${RESET}"
+case "$cwd" in "$HOME"|"$HOME"/*) shown="~${cwd#"$HOME"}" ;; *) shown=$cwd ;; esac
+loc="${DIM}${shown}${RESET}"
 [ -n "$branch" ] && loc+=" ${CYAN}(${branch})${RESET}"
 parts+=("$loc")
 
@@ -112,6 +120,29 @@ model=$(j '.model.id // .model.display_name // ""' | sed 's/^claude-//')
 dur=$(j '.cost.total_duration_ms // 0')
 parts+=("${DIM}${model} · $(elapsed "$dur")${RESET}")
 
+# Visible width of a section: its length with the colour codes removed.
+width() {
+  local plain
+  plain=$(printf '%s' "$1" | sed -E "s/${ESC}\[[0-9;]*m//g")
+  printf '%d' "${#plain}"
+}
+
+# Lay the sections out: two spaces apart, starting a new line when the next
+# one would not fit in COLUMNS. A section is never split.
+cols=${COLUMNS:-0}
 out=""
-for p in "${parts[@]}"; do out+="${out:+  }$p"; done
+line=""
+linew=0
+for p in "${parts[@]}"; do
+  w=$(width "$p")
+  if [ -z "$line" ]; then
+    line=$p; linew=$w
+  elif [ "$cols" -gt 0 ] && [ $((linew + 2 + w)) -gt "$cols" ]; then
+    out+="${line}"$'\n'
+    line=$p; linew=$w
+  else
+    line+="  $p"; linew=$((linew + 2 + w))
+  fi
+done
+out+="$line"
 printf '%s' "$out"

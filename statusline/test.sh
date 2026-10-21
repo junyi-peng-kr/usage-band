@@ -7,6 +7,7 @@ fail=0
 pass=0
 
 ESC=$'\033'
+export COLUMNS=200
 strip() { sed -E "s/${ESC}\[[0-9;]*m//g"; }
 
 check() { # name, expected, actual
@@ -96,6 +97,50 @@ JSON
 out=$(printf '%s' "$past" | bash "$script" | strip)
 contains "reset in the past says resetting" "5h 5% ░░░░░░░░ resetting" "$out"
 contains "tokens under 1000 are not rounded to k" "900/200k" "$out"
+
+# Wrapping: sections move to the next line when they would overflow COLUMNS.
+wide=$(cat <<JSON
+{
+  "cwd": "$HOME/proj",
+  "model": { "id": "claude-fable-5-1" },
+  "cost": { "total_cost_usd": 0.42, "total_duration_ms": 3900000 },
+  "context_window": { "used_percentage": 12, "total_input_tokens": 24400, "context_window_size": 200000 },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 75, "resets_at": $in2h },
+    "seven_day": { "used_percentage": 95, "resets_at": $in3d }
+  }
+}
+JSON
+)
+line1="~/proj  ctx 12% █░░░░░░░ 24k/200k  5h 75% ██████░░ →$hhmm"
+line2="7d 95% ████████ →$day  \$0.42  fable-5-1 · 1h05m"
+check "home dir is shown as ~ and everything fits on one wide line" \
+  "$line1  $line2" \
+  "$(printf '%s' "$wide" | COLUMNS=200 bash "$script" | strip)"
+check "COLUMNS=60 breaks between sections" \
+  "$line1
+$line2" \
+  "$(printf '%s' "$wide" | COLUMNS=60 bash "$script" | strip)"
+check "width is measured in characters, not bytes: 57 columns still fits line 1" \
+  "$line1
+$line2" \
+  "$(printf '%s' "$wide" | COLUMNS=57 bash "$script" | strip)"
+check "COLUMNS=56 moves 5h down, and the model after it" \
+  "~/proj  ctx 12% █░░░░░░░ 24k/200k
+5h 75% ██████░░ →$hhmm  7d 95% ████████ →$day  \$0.42
+fable-5-1 · 1h05m" \
+  "$(printf '%s' "$wide" | COLUMNS=56 bash "$script" | strip)"
+check "no COLUMNS: single line" \
+  "$line1  $line2" \
+  "$(printf '%s' "$wide" | env -u COLUMNS bash "$script" | strip)"
+check "a section wider than COLUMNS still gets its own line" \
+  "~/proj
+ctx 12% █░░░░░░░ 24k/200k
+5h 75% ██████░░ →$hhmm
+7d 95% ████████ →$day
+\$0.42
+fable-5-1 · 1h05m" \
+  "$(printf '%s' "$wide" | COLUMNS=10 bash "$script" | strip)"
 
 rm -rf "$repo" "$plain"
 echo "$pass passed, $fail failed"
