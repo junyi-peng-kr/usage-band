@@ -6,11 +6,17 @@ The band refreshes after every turn. `/usage-band` toggles it; the Hide button o
 
 ## Install
 
+**Claude desktop app:** click **+** next to the prompt box → **Plugins** → **Add marketplace**, enter `junyi-peng-kr/usage-band`, then **Add plugin** → `usage-band`.
+
+**Claude Code in a terminal:**
+
 ```
 /plugin install usage-band --marketplace junyi-peng-kr/usage-band
 ```
 
-Or, while developing, run Claude Code with `--plugin-dir /path/to/usage-band`.
+or from a shell: `claude plugin install usage-band --marketplace junyi-peng-kr/usage-band`. Installed at the user scope, it also loads in the desktop app's local Code sessions.
+
+**While developing:** `claude --plugin-dir /path/to/usage-band`, or set `CLAUDE_CODE_PLUGIN_DIRS=/path/to/usage-band` for sessions the desktop app starts.
 
 ## How it works
 
