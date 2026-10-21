@@ -1,6 +1,7 @@
 export type Limit = { kind: string; percent: number; resetsAt?: string }
 
 export type Snapshot = {
+  error?: string
   ctxPercent: number
   ctxTokens: number
   ctxWindow: number

@@ -59,6 +59,18 @@ function shortModel(model: string): string {
 }
 
 async function refresh($: EngineInterface) {
+  try {
+    await refreshOrThrow($)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    await update($, snapshot, () => ({
+      error: message,
+      ctxPercent: 0, ctxTokens: 0, ctxWindow: 0, limits: [], usd: null, model: '', startedAt: 0, takenAt: 0,
+    }))
+  }
+}
+
+async function refreshOrThrow($: EngineInterface) {
   const [usage, model, now] = await Promise.all([
     $.session.usage(),
     $.session.model(),
@@ -88,8 +100,23 @@ export const register: Register = on => {
       name: 'usage-band',
       description: 'Show or hide the usage band above the prompt',
     })
+    await $.tool.register({
+      name: 'diag',
+      description: 'usage-band diagnostics: the surfaces this session draws on and the last usage snapshot.',
+      isDeferred: false,
+    })
     await refresh($)
+    const surfaces = await $.session.surfaces()
+    $.ui.toast(`usage-band loaded (surfaces: ${surfaces.join(', ') || 'none'})`)
     return next(e)
+  })
+
+  on('tool.call', { tool: 'mcp__usage-band__diag' }, async $ => {
+    await refresh($)
+    const surfaces = await $.session.surfaces()
+    const snap = await read($, snapshot)
+    const hidden = await read($, isHidden)
+    return { result: { text: JSON.stringify({ surfaces, hidden, snapshot: snap }, null, 2) } }
   })
 
   on('command.run', { command: 'usage-band' }, async ($, e) => {
@@ -112,6 +139,15 @@ export const register: Register = on => {
 
     const { Box, Button, Text } = $.ui.resolve(e)
     const now = snap.takenAt
+
+    if (snap.error) {
+      return (
+        <Box key="usage-band" flexDirection="row" gap={2}>
+          <Text mono color="error">usage-band: {snap.error}</Text>
+          <Button key="hide" label="Hide" onPress={() => update($, isHidden, () => true)} />
+        </Box>
+      )
+    }
 
     return (
       <Box key="usage-band" flexDirection="row" flexWrap="wrap" gap={2} alignItems="center">
