@@ -100,23 +100,8 @@ export const register: Register = on => {
       name: 'usage-band',
       description: 'Show or hide the usage band above the prompt',
     })
-    await $.tool.register({
-      name: 'diag',
-      description: 'usage-band diagnostics: the surfaces this session draws on and the last usage snapshot.',
-      isDeferred: false,
-    })
     await refresh($)
-    const surfaces = await $.session.surfaces()
-    $.ui.toast(`usage-band loaded (surfaces: ${surfaces.join(', ') || 'none'})`)
     return next(e)
-  })
-
-  on('tool.call', { tool: 'mcp__usage-band__diag' }, async $ => {
-    await refresh($)
-    const surfaces = await $.session.surfaces()
-    const snap = await read($, snapshot)
-    const hidden = await read($, isHidden)
-    return { result: JSON.stringify({ surfaces, hidden, snapshot: snap }, null, 2) }
   })
 
   on('command.run', { command: 'usage-band' }, async ($, e) => {
@@ -133,7 +118,8 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const snap = await read($, snapshot)
-    if (e.props.hasSurvey || snap === null || (await read($, isHidden))) {
+    // The terminal has statusline/usage-band.sh; the band is for the desktop app.
+    if (e.surface !== 'desktop' || e.props.hasSurvey || snap === null || (await read($, isHidden))) {
       return next(e)
     }
 

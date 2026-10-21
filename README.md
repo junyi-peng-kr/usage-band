@@ -1,8 +1,10 @@
 # usage-band
 
-A mod for the Claude desktop app and Claude Code that draws a one-line usage band above the prompt, like the CLI status line: context-window fill, the 5-hour and 7-day rate-limit windows with their reset times, session cost, the current model and how long the session has been running. Each figure has a small text progress bar that turns yellow past 70% and red past 90%.
+A mod for the Claude desktop app's Code view that draws a one-line usage band above the prompt, like the CLI status line: context-window fill, the 5-hour and 7-day rate-limit windows with their reset times, session cost, the current model and how long the session has been running. Each figure has a small text progress bar that turns yellow past 70% and red past 90%.
 
 The band refreshes after every turn. `/usage-band` toggles it; the Hide button on the band does the same.
+
+**Where it shows:** only on the desktop app's `desktop` surface — the Code view of a local session. In a terminal it draws nothing (use the status line below instead). The desktop app's chat view, and cloud sessions opened there, have no render surface for mods, so the band can't appear there.
 
 ## Install
 
