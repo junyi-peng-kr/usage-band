@@ -1,0 +1,11 @@
+{
+  "name": "junyi-peng-kr",
+  "owner": { "name": "Junyi Peng" },
+  "plugins": [
+    {
+      "name": "usage-band",
+      "source": ".",
+      "description": "A band above the prompt showing context fill, rate-limit windows, session cost and model — like the CLI status line."
+    }
+  ]
+}

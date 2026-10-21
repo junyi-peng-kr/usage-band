@@ -1,0 +1,6 @@
+{
+  "name": "usage-band",
+  "version": "0.1.0",
+  "description": "A band above the prompt showing context fill, rate-limit windows, session cost and model — like the CLI status line.",
+  "types": "./types/index.d.ts"
+}
