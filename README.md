@@ -21,3 +21,31 @@ or from a shell: `claude plugin install usage-band --marketplace junyi-peng-kr/u
 ## How it works
 
 `hooks/register.tsx` reads `$.session.usage()` and `$.session.model()` on `session.start` and `turn.complete`, keeps a snapshot in `$.state`, and renders it in a `ui.render` hook on the `AbovePrompt` component. No network, no files, no model calls.
+
+## Status line
+
+`statusline/usage-band.sh` draws the same figures as a CLI status line, for terminals and sessions where the band isn't available. It is independent of the plugin: install it by pointing `statusLine` in `~/.claude/settings.json` at the script.
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "bash /path/to/usage-band/statusline/usage-band.sh"
+}
+```
+
+```
+~/projects/usage-band (main)  ctx 12% █░░░░░░░ 24k/200k  5h 23% ██░░░░░░ →14:30  7d 41% ███░░░░░ →Fri  $0.42  fable-5-1 · 1h05m
+```
+
+Each section has its own colour so it can be found without reading the label: path dim, branch cyan, context magenta, 5h blue, 7d bright blue, cost green. A figure turns yellow past 70% and red past 90%, so those two colours only ever mean "getting full". Sections the session hasn't reported yet (rate limits before the first response, cost outside a billed session) are left out.
+
+In a narrow terminal the sections wrap onto further lines rather than being cut off: Claude Code passes the width as `COLUMNS`, and a section moves to the next line when it would overflow. Sections are never split. The home directory is shown as `~`.
+
+```
+~/projects/usage-band (main)  ctx 12% █░░░░░░░ 24k/200k  5h 23% ██░░░░░░ →14:30
+7d 41% ███░░░░░ →Fri  $0.42  fable-5-1 · 1h05m
+```
+
+[statusline/README.md](statusline/README.md) explains each section in detail.
+
+Needs `jq`. Tests: `bash statusline/test.sh`.
