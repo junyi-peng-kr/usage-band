@@ -46,4 +46,6 @@ In a narrow terminal the sections wrap onto further lines rather than being cut 
 7d 41% ███░░░░░ →Fri  $0.42  fable-5-1 · 1h05m
 ```
 
+[statusline/README.md](statusline/README.md) explains each section in detail.
+
 Needs `jq`. Tests: `bash statusline/test.sh`.
